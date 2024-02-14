@@ -29,9 +29,16 @@ class Elem:
             raise XmlElemFormatError('content and children cannot exist in an element at the same time')
         self.child_elements.append(elem)
 
-    def set_content(self, content: Union[str, int]):
+    def set_content(self, content: Union[str, int, float], cdata=False):
         if self.child_elements:
             raise XmlElemFormatError('content and children cannot exist in an element at the same time')
+        if type(content) is float:
+            content = int(content)
+        if cdata:
+            if type(content) is not str:
+                raise XmlElemFormatError('CDATA content must be of the str type')
+            else:
+                content = '<![CDATA[\n' + content + ']]>'
         self.content = str(content)
 
     def get_xml(self):
