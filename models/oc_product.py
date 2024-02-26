@@ -19,7 +19,7 @@ class ProductBase(Base):
     sku: Mapped[str] = mapped_column(VARCHAR, nullable=False)
     image: Mapped[str] = mapped_column(VARCHAR)
     video_youtube: Mapped[str] = mapped_column(VARCHAR)
-    product_images: Mapped[list] = relationship('ProductImage', back_populates='product')
+    product_images: Mapped[list] = relationship('ProductImage', back_populates='product', lazy='joined')
 
     @hybrid_property
     def all_images(self):
@@ -42,10 +42,10 @@ class Product(ProductBase):
     mpn: Mapped[str] = mapped_column(VARCHAR)
 
     main_car_sku: Mapped[str] = mapped_column("main_car_sku", VARCHAR, ForeignKey('oc_product.sku'))
-    main_car = relationship('ProductCar', remote_side=ProductBase.sku, join_depth=0)
+    main_car = relationship('ProductCar', remote_side=ProductBase.sku, join_depth=0, lazy='joined')
     location = mapped_column(VARCHAR)
 
-    categories = relationship('ProductCategory', back_populates='product')
+    categories = relationship('ProductCategory', back_populates='product', lazy='joined')
 
     manufacturer_id = mapped_column(VARCHAR, ForeignKey('oc_manufacturer.manufacturer_id'))
     manufacturer = relationship("Manufacturer", lazy='joined')
@@ -54,7 +54,7 @@ class Product(ProductBase):
     # joined 0.41 2500mb
     # subquery 0.48 2250mb
 
-    description = relationship('ProductDescription', back_populates='product', uselist=False)
+    description = relationship('ProductDescription', back_populates='product', uselist=False, lazy='joined')
     attributes = relationship('ProductAttribute', back_populates='product',
                               collection_class=attribute_mapped_collection('attribute_id'), lazy='joined')
 

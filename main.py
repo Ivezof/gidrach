@@ -184,6 +184,7 @@ def avito_xml_accessories(products: list[gidrachDB.Product], document: xmlWriter
         document.add_elem(ad)
 
 
+@profile
 def avito_xml_auto(products: list[gidrachDB.Product], document: xmlWriter.Document):
     timestart = time.time()
 
@@ -349,15 +350,15 @@ def drom_xml(products: list[gidrachDB.Product], document: xmlWriter.Document):
 
 
 def start_xml_generation():
-    avito_xml_accessories(gidrachDB.get_accessories(), avito_document)
+    # avito_xml_accessories(gidrachDB.get_accessories(), avito_document)
     avito_xml_auto(gidrachDB.get_products(), avito_document)
 
-    avito_xml_accessories(gidrachDB.get_accessories(separator=True), avito_sep_document)
+    # avito_xml_accessories(gidrachDB.get_accessories(separator=True), avito_sep_document)
     avito_xml_auto(gidrachDB.get_products(separator=True), avito_sep_document)
     avito_document.close_document()
     avito_sep_document.close_document()
 
 
 if __name__ == '__main__':
-    update_product_on_site(gidrachDB.get_all_products())
+    # update_product_on_site(gidrachDB.get_all_products())
     start_xml_generation()
