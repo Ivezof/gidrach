@@ -2,8 +2,6 @@ import re
 import time
 from xml.sax.saxutils import escape
 
-from line_profiler import profile
-
 import config
 import gidrachDB
 import tezariusDB
@@ -42,7 +40,6 @@ def get_type_product(product_attr):
             return v
 
 
-@profile
 def update_product_on_site(products: dict):
     tz_products = tezariusDB.Products()
     for tz_product_page in tz_products:
