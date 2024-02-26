@@ -46,20 +46,26 @@ class Elem:
         if self.attr:
             for key, value in self.attr.items():
                 xml += f'{key}="{value}" '
-        xml += ">"
+
         if self.content and self.child_elements:
             raise XmlElemFormatError('content and children cannot exist in an element at the same time')
         elif self.content:
+            xml += ">"
             xml += self.content
-        else:
+            xml += f"</{self.name}>"
+        elif self.child_elements:
+            xml += ">"
             for i in self.child_elements:
                 xml += i.get_xml()
-        xml += f"</{self.name}>"
+            xml += f"</{self.name}>"
+        else:
+            xml += "/>"
+
         return xml
 
 
 class Document:
-    def __init__(self, path: str, name: str, main_elem: str, attr: dict):
+    def __init__(self, path: str, name: str, main_elem: str, attr: dict = {}):
         self.__path = path
         self.__name = name
         self.__main_elem = main_elem
@@ -79,3 +85,4 @@ class Document:
         self.__xml = elem.get_xml()
         with open(f'{self.__path}{self.__name}', "a", encoding='utf8') as wf:
             wf.write(self.__xml)
+        del elem

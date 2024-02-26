@@ -1,7 +1,8 @@
 import re
 
 from sqlalchemy import create_engine, MetaData, Table, Integer, String, \
-    Column, DateTime, ForeignKey, Numeric, VARCHAR, DECIMAL, ForeignKeyConstraint, PrimaryKeyConstraint, Boolean, event
+    Column, DateTime, ForeignKey, Numeric, VARCHAR, DECIMAL, ForeignKeyConstraint, PrimaryKeyConstraint, Boolean, event, \
+    select
 from sqlalchemy.ext.declarative import declarative_base
 from sqlalchemy.orm import relationship, mapped_column, attribute_mapped_collection, validates, Mapped
 from sqlalchemy.ext.hybrid import hybrid_property
@@ -18,7 +19,19 @@ class ProductBase(Base):
     sku: Mapped[str] = mapped_column(VARCHAR, nullable=False)
     image: Mapped[str] = mapped_column(VARCHAR)
     video_youtube: Mapped[str] = mapped_column(VARCHAR)
-    product_images = relationship('ProductImage', back_populates='product')
+    product_images: Mapped[list] = relationship('ProductImage', back_populates='product')
+
+    @hybrid_property
+    def all_images(self):
+        images = [self.image]
+        if not self.product_images:
+            return images
+        if type(self.product_images) is list:
+            for img in self.product_images:
+                images.append(img.image)
+        else:
+            images.append(self.product_images.image)
+        return images
 
 
 class Product(ProductBase):
@@ -29,10 +42,10 @@ class Product(ProductBase):
     mpn: Mapped[str] = mapped_column(VARCHAR)
 
     main_car_sku: Mapped[str] = mapped_column("main_car_sku", VARCHAR, ForeignKey('oc_product.sku'))
-    main_car = relationship('ProductCar', remote_side=ProductBase.sku, lazy='selectin', join_depth=0)
+    main_car = relationship('ProductCar', remote_side=ProductBase.sku, join_depth=0)
     location = mapped_column(VARCHAR)
 
-    # categories = relationship('ProductCategory', back_populates='product', lazy='joined')
+    categories = relationship('ProductCategory', back_populates='product')
 
     manufacturer_id = mapped_column(VARCHAR, ForeignKey('oc_manufacturer.manufacturer_id'))
     manufacturer = relationship("Manufacturer", lazy='joined')
@@ -41,15 +54,21 @@ class Product(ProductBase):
     # joined 0.41 2500mb
     # subquery 0.48 2250mb
 
-    description = relationship('ProductDescription', back_populates='product', uselist=False, lazy='selectin')
+    description = relationship('ProductDescription', back_populates='product', uselist=False)
     attributes = relationship('ProductAttribute', back_populates='product',
-                              collection_class=attribute_mapped_collection('attribute_id'), lazy='selectin')
+                              collection_class=attribute_mapped_collection('attribute_id'), lazy='joined')
 
-    # @hybrid_property
-    # def main_category(self):
-    #     for category in self.categories:
-    #         if category.main_category:
-    #             return category.category
+    @hybrid_property
+    def main_category(self):
+        for category in self.categories:
+            if category.main_category:
+                return category.category
+
+    @main_category.expression
+    def main_category(cls):
+        return select(ProductCategory.category_id).filter_by(main_category=True).where(
+            ProductCategory.product_id == cls.product_id).as_scalar()
+        # return select(ProductCategory).filter(ProductCategory.main_category == True).as_scalar()
 
 
 class Manufacturer(Base):
@@ -78,7 +97,7 @@ class ProductAttribute(Base):
     attribute_id = Column(Integer, nullable=False, primary_key=True)
     text = Column(VARCHAR)
 
-    attribute_description = relationship('AttributeDescription', uselist=False, lazy='selectin')
+    attribute_description = relationship('AttributeDescription', uselist=False)
 
     product = relationship('Product', back_populates='attributes')
 
@@ -105,20 +124,20 @@ class InformationDescription(Base):
     description = Column(VARCHAR)
 
 
-# class Category(Base):
-#     __tablename__ = 'oc_category'
-#     category_id = Column(Integer, primary_key=True)
-#     avito_generation_id = Column(Integer)
-#
-#
-# class ProductCategory(Base):
-#     __tablename__ = 'oc_product_to_category'
-#     product_id = Column(Integer, ForeignKey('oc_product.product_id'), primary_key=True)
-#     category_id = Column(Integer, ForeignKey('oc_category.category_id'), primary_key=True)
-#     main_category = Column(Boolean)
-#
-#     category = relationship('Category', lazy='joined')
-#     product = relationship('Product', back_populates='categories')
+class Category(Base):
+    __tablename__ = 'oc_category'
+    category_id = Column(Integer, primary_key=True)
+    avito_generation_id = Column(Integer)
+
+
+class ProductCategory(Base):
+    __tablename__ = 'oc_product_to_category'
+    product_id = Column(Integer, ForeignKey('oc_product.product_id'), primary_key=True)
+    category_id = Column(Integer, ForeignKey('oc_category.category_id'), primary_key=True)
+    main_category = Column(Boolean)
+
+    category = relationship('Category', lazy='joined')
+    product = relationship('Product', back_populates='categories')
 
 
 class Dismantling(Base):
