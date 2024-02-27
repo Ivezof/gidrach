@@ -56,6 +56,11 @@ def get_all_products():
     return {x.sku: x for x in result}
 
 
+def get_products_to_drom():
+    result = default_query.all()
+
+    return result
+
 def get_accessories(separator=False):
     result = (default_query.filter(Product.attributes.any(attribute_id=22))
               .filter(Product.price > config.avito_sep_summ if separator else Product.price <= config.avito_sep_summ)

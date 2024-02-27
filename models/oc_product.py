@@ -42,7 +42,7 @@ class Product(ProductBase):
     mpn: Mapped[str] = mapped_column(VARCHAR)
 
     main_car_sku: Mapped[str] = mapped_column("main_car_sku", VARCHAR, ForeignKey('oc_product.sku'))
-    main_car = relationship('ProductCar', remote_side=ProductBase.sku, join_depth=0, lazy='joined')
+    main_car = relationship('ProductCar', remote_side=ProductBase.sku, join_depth=0, lazy='selectin')
     location = mapped_column(VARCHAR)
 
     categories = relationship('ProductCategory', back_populates='product', lazy='joined')
