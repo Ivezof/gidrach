@@ -346,13 +346,28 @@ def drom_xml(products: list[gidrachDB.Product], document: xmlWriter.Document):
 
 
 def start_xml_generation():
-    avito_xml_accessories(gidrachDB.get_accessories(), avito_document)
-    avito_xml_auto(gidrachDB.get_products(), avito_document)
 
-    avito_xml_accessories(gidrachDB.get_accessories(separator=True), avito_sep_document)
-    avito_xml_auto(gidrachDB.get_products(separator=True), avito_sep_document)
+    accessories = gidrachDB.get_accessories()
+    products = gidrachDB.get_products()
 
-    drom_xml(gidrachDB.get_products_to_drom(), drom_document)
+    accessories_sep = gidrachDB.get_accessories(separator=True)
+    products_sep = gidrachDB.get_products(separator=True)
+
+    drom_prods = gidrachDB.get_products_to_drom()
+
+    avito_xml_accessories(accessories, avito_document)
+    del accessories
+    avito_xml_auto(products, avito_document)
+    del products
+
+    avito_xml_accessories(accessories_sep, avito_sep_document)
+    del accessories_sep
+    avito_xml_auto(products_sep, avito_sep_document)
+    del products_sep
+
+    drom_xml(drom_prods, drom_document)
+    del drom_prods
+
     drom_document.close_document()
     avito_document.close_document()
     avito_sep_document.close_document()
