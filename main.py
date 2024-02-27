@@ -181,7 +181,6 @@ def avito_xml_accessories(products: list[gidrachDB.Product], document: xmlWriter
         document.add_elem(ad)
 
 
-@profile
 def avito_xml_auto(products: list[gidrachDB.Product], document: xmlWriter.Document):
     timestart = time.time()
 
