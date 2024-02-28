@@ -1,14 +1,7 @@
-import re
-
-from sqlalchemy import create_engine, MetaData, Table, Integer, String, \
-    Column, DateTime, ForeignKey, Numeric, VARCHAR, DECIMAL, ForeignKeyConstraint, PrimaryKeyConstraint, Boolean, event, \
-    select
+from sqlalchemy import Integer, Column, ForeignKey, VARCHAR, DECIMAL, Boolean, select
 from sqlalchemy.ext.declarative import declarative_base
-from sqlalchemy.orm import relationship, mapped_column, attribute_mapped_collection, validates, Mapped
 from sqlalchemy.ext.hybrid import hybrid_property
-from datetime import datetime
-
-from config import type_dict
+from sqlalchemy.orm import relationship, mapped_column, attribute_mapped_collection, Mapped
 
 Base = declarative_base()
 
@@ -63,6 +56,17 @@ class Product(ProductBase):
         for category in self.categories:
             if category.main_category:
                 return category.category
+
+    @hybrid_property
+    def first_category(self):
+        for category in self.categories:
+            if not category.category.parent:
+                return category.category
+
+    # @first_category.expression
+    # def first_category(cls):
+    #     return (select(Category.category_id).join(ProductCategory).filter(Category.parent_id == 0)
+    #             .where(ProductCategory.product_id == cls.product_id).as_scalar())
 
     @main_category.expression
     def main_category(cls):
@@ -127,7 +131,9 @@ class InformationDescription(Base):
 class Category(Base):
     __tablename__ = 'oc_category'
     category_id = Column(Integer, primary_key=True)
+    parent_id = Column(Integer, ForeignKey('oc_category.category_id'))
     avito_generation_id = Column(Integer)
+    parent = relationship('Category', remote_side=[category_id])
 
 
 class ProductCategory(Base):

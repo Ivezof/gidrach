@@ -1,8 +1,6 @@
 from sqlalchemy import VARCHAR, Integer, ForeignKey
 from sqlalchemy.orm import declarative_base, mapped_column, Mapped, relationship
 
-import gidrachDB
-
 Base = declarative_base()
 
 

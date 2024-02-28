@@ -86,3 +86,4 @@ class Document:
         with open(f'{self.__path}{self.__name}', "a", encoding='utf8') as wf:
             wf.write(self.__xml)
         del elem
+        del self.__xml

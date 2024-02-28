@@ -56,14 +56,19 @@ def get_all_products():
     return {x.sku: x for x in result}
 
 
-def get_products_to_drom():
-    result = default_query.all()
+def get_products_to_drom(trucks=False):
+    result = (default_query.filter(Product.categories
+                                   .any(oc_product.ProductCategory.category_id.in_(config.drom_trucks_id))
+                                   if trucks else oc_product.ProductCategory.category_id.not_in(config.drom_trucks_id))
+              .all())
 
     return result
+
 
 def get_accessories(separator=False):
     result = (default_query.filter(Product.attributes.any(attribute_id=22))
               .filter(Product.price > config.avito_sep_summ if separator else Product.price <= config.avito_sep_summ)
+              .filter(Product.price >= config.avito_min_summ if separator else Product.price <= config.avito_max_summ)
               .all())
     return result
 
@@ -74,6 +79,7 @@ def get_products(separator=False):
               .filter(~Product.attributes.any(attribute_id=22))
               .filter(Product.main_category not in [1232, 1226])
               .filter(Product.price > config.avito_sep_summ if separator else Product.price <= config.avito_sep_summ)
+              .filter(Product.price >= config.avito_min_summ if separator else Product.price <= config.avito_max_summ)
               .all())
 
     return result
@@ -82,6 +88,7 @@ def get_products(separator=False):
 def get_buses(separator=False):
     result = ((session.query(Product).where(Product.main_category == 1232))
               .filter(Product.price > config.avito_sep_summ if separator else Product.price <= config.avito_sep_summ)
+              .filter(Product.price >= config.avito_min_summ if separator else Product.price <= config.avito_max_summ)
               .all())
     return result
 
@@ -89,6 +96,7 @@ def get_buses(separator=False):
 def get_wheels(separator=False):
     result = ((session.query(Product).where(Product.main_category == 1226))
               .filter(Product.price > config.avito_sep_summ if separator else Product.price <= config.avito_sep_summ)
+              .filter(Product.price >= config.avito_min_summ if separator else Product.price <= config.avito_max_summ)
               .all())
     return result
 
@@ -96,6 +104,7 @@ def get_wheels(separator=False):
 def get_caps(separator=False):
     result = ((session.query(Product).where(Product.main_category == 1244))
               .filter(Product.price > config.avito_sep_summ if separator else Product.price <= config.avito_sep_summ)
+              .filter(Product.price >= config.avito_min_summ if separator else Product.price <= config.avito_max_summ)
               .all())
     return result
 
@@ -103,6 +112,7 @@ def get_caps(separator=False):
 def get_disks(separator=False):
     result = ((session.query(Product).where(Product.main_category == 1233))
               .filter(Product.price > config.avito_sep_summ if separator else Product.price <= config.avito_sep_summ)
+              .filter(Product.price >= config.avito_min_summ if separator else Product.price <= config.avito_max_summ)
               .all())
     return result
 

@@ -6,7 +6,6 @@ import config
 import gidrachDB
 import tezariusDB
 import xmlWriter
-from config import type_dict
 from gidrachDB import info_msg_uns_1, info_msg_uns_2, info_msg_1, info_msg_2
 from models import oc_product
 
@@ -17,6 +16,7 @@ avito_sep_document = xmlWriter.Document(config.xml_path, config.avito_sep_xml_na
                                         {'formatVersion': '3', 'target': "Avito.ru"})
 
 drom_document = xmlWriter.Document(config.xml_path, config.drom_xml_name, 'offers')
+drom_trucks_document = xmlWriter.Document(config.xml_path, config.drom_trucks_xml_name, 'offers')
 
 p = re.compile("&lt(.*?)&gt;")
 msg_drom_1 = p.sub("", info_msg_1.description.replace("&lt;b&gt;", "\n").replace("&amp;nbsp;", " ")).replace("&quot;",
@@ -30,14 +30,6 @@ def desc_formatted(new_name, text):
     new_text_split[0] = "&lt;br /&gt;" + new_name
     new_desc = "\n".join(new_text_split)
     return new_desc
-
-
-def get_type_product(product_attr):
-    if product_attr in type_dict:
-        return type_dict.get(product_attr)
-    for k, v in type_dict.items():
-        if re.search(k.replace('*', '\\w*').replace('|', '\\|'), product_attr):
-            return v
 
 
 def update_product_on_site(products: dict):
@@ -309,7 +301,7 @@ def drom_xml(products: list[gidrachDB.Product], document: xmlWriter.Document):
 
         # название товара
         name = xmlWriter.Elem('name', parent_elem=offer)
-        name.set_content(product)
+        name.set_content(product.description.name)
 
         # condition
         condition = xmlWriter.Elem('condition', parent_elem=offer)
@@ -343,6 +335,7 @@ def drom_xml(products: list[gidrachDB.Product], document: xmlWriter.Document):
 
         video = xmlWriter.Elem('video', parent_elem=media)
         video.set_content(product.main_car.video_youtube)
+        document.add_elem(offer)
 
 
 def start_xml_generation():
@@ -354,6 +347,7 @@ def start_xml_generation():
     products_sep = gidrachDB.get_products(separator=True)
 
     drom_prods = gidrachDB.get_products_to_drom()
+    drom_prods_trucks = gidrachDB.get_products_to_drom(trucks=True)
 
     avito_xml_accessories(accessories, avito_document)
     del accessories
@@ -368,7 +362,11 @@ def start_xml_generation():
     drom_xml(drom_prods, drom_document)
     del drom_prods
 
+    drom_xml(drom_prods_trucks, drom_trucks_document)
+    del drom_prods_trucks
+
     drom_document.close_document()
+    drom_trucks_document.close_document()
     avito_document.close_document()
     avito_sep_document.close_document()
 
