@@ -11,6 +11,7 @@ class Product(Base):
     quantity: Mapped[int] = mapped_column(Integer)
     price: Mapped[int] = mapped_column(Integer)
     location: Mapped[str] = mapped_column(VARCHAR)
+    mpn: Mapped[str] = mapped_column(VARCHAR)
     description = relationship('ProductDescription', back_populates='product', uselist=False, lazy='joined')
 
 

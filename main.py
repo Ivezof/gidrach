@@ -2,6 +2,8 @@ import re
 import time
 from xml.sax.saxutils import escape
 
+from line_profiler import profile
+
 import config
 import gidrachDB
 import tezariusDB
@@ -139,10 +141,9 @@ def avito_rim_default_elems(product: gidrachDB.Product, ad: xmlWriter.Elem):
     # images
     product_imgs = product.all_images
 
-    images = xmlWriter.Elem('Images', parent_elem=ad)
-
-    for img in product_imgs[:4]:
-        xmlWriter.Elem('Image', attr={'url': img}, parent_elem=images)
+    images = xmlWriter.Elem('ImageUrls', parent_elem=ad)
+    imgs = '|'.join(product_imgs[:10])
+    images.set_content(imgs)
 
 
 def avito_xml_accessories(products: list[gidrachDB.Product], document: xmlWriter.Document):
@@ -163,12 +164,12 @@ def avito_xml_accessories(products: list[gidrachDB.Product], document: xmlWriter
 
         images = xmlWriter.Elem('Images', parent_elem=ad)
 
-        for img in product_imgs[:4]:
-            xmlWriter.Elem('Image', attr={'url': img}, parent_elem=images)
+        imgs = '|'.join(product_imgs[:4])
 
         main_car_imgs = product.main_car.all_images
-        for img in main_car_imgs[:6]:
-            xmlWriter.Elem('Image', attr={'url': img}, parent_elem=images)
+        imgs += '|'.join(main_car_imgs[:6])
+
+        images.set_content(imgs)
 
         document.add_elem(ad)
 
@@ -223,12 +224,12 @@ def avito_xml_auto(products: list[gidrachDB.Product], document: xmlWriter.Docume
 
         images = xmlWriter.Elem('Images', parent_elem=ad)
 
-        for img in product_imgs[:4]:
-            xmlWriter.Elem('Image', attr={'url': img}, parent_elem=images)
+        imgs = '|'.join(product_imgs[:4])
 
         main_car_imgs = product.main_car.all_images
-        for img in main_car_imgs[:6]:
-            xmlWriter.Elem('Image', attr={'url': img}, parent_elem=images)
+        imgs += '|'.join(main_car_imgs[:6])
+
+        images.set_content(imgs)
 
         document.add_elem(ad)
 
@@ -295,6 +296,7 @@ def avito_xml_disks(products: list[gidrachDB.Product], document: xmlWriter.Docum
         document.add_elem(ad)
 
 
+@profile
 def drom_xml(products: list[gidrachDB.Product], document: xmlWriter.Document):
     for product in products:
         offer = xmlWriter.Elem('offer')
@@ -339,7 +341,6 @@ def drom_xml(products: list[gidrachDB.Product], document: xmlWriter.Document):
 
 
 def start_xml_generation():
-
     accessories = gidrachDB.get_accessories()
     products = gidrachDB.get_products()
 
@@ -360,10 +361,7 @@ def start_xml_generation():
     del products_sep
 
     drom_xml(drom_prods, drom_document)
-    del drom_prods
-
     drom_xml(drom_prods_trucks, drom_trucks_document)
-    del drom_prods_trucks
 
     drom_document.close_document()
     drom_trucks_document.close_document()
@@ -372,5 +370,5 @@ def start_xml_generation():
 
 
 if __name__ == '__main__':
-    # update_product_on_site(gidrachDB.get_all_products())
+    update_product_on_site(gidrachDB.get_all_products())
     start_xml_generation()

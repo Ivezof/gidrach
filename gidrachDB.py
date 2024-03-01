@@ -2,8 +2,10 @@ import html
 import time
 
 import requests
-from sqlalchemy import create_engine, and_
-from sqlalchemy.orm import Session
+from sqlalchemy import create_engine, and_, select, distinct
+from sqlalchemy.orm import Session, lazyload
+from models.oc_drom_product import Product as ProductDrom
+from models import oc_drom_product
 from models.oc_site_product import Product as LiteProduct
 from models.oc_product import Product, InformationDescription
 import config
@@ -12,6 +14,8 @@ import xml.etree.ElementTree as ET
 
 engine = create_engine(
     f'mysql+pymysql://{config.site_login}:{config.site_password}@{config.site_db_ip}/{config.site_db}')
+
+engine.execution_options(stream_results=True)
 
 session = Session(bind=engine)
 
@@ -44,11 +48,11 @@ info_msg_uns_2 = unescape_text(info_msg_2.description)
 
 # Запрос к базе данных для получения всех товаров
 
-default_query = (session.query(Product)
+default_query = (session.query(Product).distinct()
                  .filter(
     and_(Product.main_car_sku != '', Product.main_car_sku != '0', Product.main_car_sku is not None))
                  .filter(Product.main_car.has())
-                 .filter(Product.manufacturer_id != 0))
+                 .filter(Product.manufacturer_id != 0).filter(Product.quantity != 0))
 
 
 def get_all_products():
@@ -57,11 +61,12 @@ def get_all_products():
 
 
 def get_products_to_drom(trucks=False):
-    result = (default_query.filter(Product.categories
-                                   .any(oc_product.ProductCategory.category_id.in_(config.drom_trucks_id))
-                                   if trucks else oc_product.ProductCategory.category_id.not_in(config.drom_trucks_id))
-              .all())
-
+    result = (session.query(ProductDrom).distinct().outerjoin(oc_drom_product.ProductCategory)
+              .filter(and_(ProductDrom.main_car_sku != '', ProductDrom.main_car_sku != '0', ProductDrom.main_car_sku is not None))
+              .filter(ProductDrom.main_car.has()).filter(ProductDrom.quantity != 0)
+              .filter(ProductDrom.categories.any(oc_drom_product.ProductCategory
+                                                 .category_id.in_(config.drom_trucks_id)) if trucks else
+                      oc_drom_product.ProductCategory.category_id.not_in(config.drom_trucks_id)).all())
     return result
 
 

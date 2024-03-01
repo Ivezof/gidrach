@@ -8,10 +8,10 @@ Base = declarative_base()
 
 class ProductBase(Base):
     __tablename__ = 'oc_product'
-    product_id: Mapped[int] = mapped_column(Integer, primary_key=True)
-    sku: Mapped[str] = mapped_column(VARCHAR, nullable=False)
-    image: Mapped[str] = mapped_column(VARCHAR)
-    video_youtube: Mapped[str] = mapped_column(VARCHAR)
+    product_id: Mapped[int] = mapped_column(Integer, primary_key=True, index=True)
+    sku: Mapped[str] = mapped_column(VARCHAR, nullable=False, index=True)
+    image: Mapped[str] = mapped_column(VARCHAR, index=True)
+    video_youtube: Mapped[str] = mapped_column(VARCHAR, index=True)
     product_images: Mapped[list] = relationship('ProductImage', back_populates='product', lazy='joined')
 
     @hybrid_property
@@ -28,26 +28,26 @@ class ProductBase(Base):
 
 
 class Product(ProductBase):
-    quantity: Mapped[int] = mapped_column(Integer, nullable=False, default=0)
-    price = mapped_column(DECIMAL(15, 4), nullable=False, default=0.0000)
-    model: Mapped[str] = mapped_column(VARCHAR, nullable=False)
+    quantity: Mapped[int] = mapped_column(Integer, nullable=False, default=0, index=True)
+    price = mapped_column(DECIMAL(15, 4), nullable=False, default=0.0000, index=True)
+    model: Mapped[str] = mapped_column(VARCHAR, nullable=False, index=True)
 
-    mpn: Mapped[str] = mapped_column(VARCHAR)
+    mpn: Mapped[str] = mapped_column(VARCHAR, index=True)
 
-    main_car_sku: Mapped[str] = mapped_column("main_car_sku", VARCHAR, ForeignKey('oc_product.sku'))
+    main_car_sku: Mapped[str] = mapped_column("main_car_sku", VARCHAR, ForeignKey('oc_product.sku'), index=True)
     main_car = relationship('ProductCar', remote_side=ProductBase.sku, join_depth=0, lazy='selectin')
-    location = mapped_column(VARCHAR)
+    location = mapped_column(VARCHAR, index=True)
 
-    categories = relationship('ProductCategory', back_populates='product', lazy='joined')
+    categories = relationship('ProductCategory', back_populates='product', lazy='selectin')
 
-    manufacturer_id = mapped_column(VARCHAR, ForeignKey('oc_manufacturer.manufacturer_id'))
+    manufacturer_id = mapped_column(VARCHAR, ForeignKey('oc_manufacturer.manufacturer_id'), index=True)
     manufacturer = relationship("Manufacturer", lazy='joined')
 
     # selectin 0.39 2300mb
     # joined 0.41 2500mb
     # subquery 0.48 2250mb
 
-    description = relationship('ProductDescription', back_populates='product', uselist=False, lazy='joined')
+    description = relationship('ProductDescription', back_populates='product', uselist=False, lazy='selectin')
     attributes = relationship('ProductAttribute', back_populates='product',
                               collection_class=attribute_mapped_collection('attribute_id'), lazy='joined')
 
