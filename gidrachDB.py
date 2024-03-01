@@ -52,7 +52,7 @@ default_query = (session.query(Product).distinct()
                  .filter(
     and_(Product.main_car_sku != '', Product.main_car_sku != '0', Product.main_car_sku is not None))
                  .filter(Product.main_car.has())
-                 .filter(Product.manufacturer_id != 0).filter(Product.quantity != 0))
+                 .filter(Product.manufacturer_id != 0).filter(Product.quantity > 0))
 
 
 def get_all_products():
@@ -63,7 +63,7 @@ def get_all_products():
 def get_products_to_drom(trucks=False):
     result = (session.query(ProductDrom).distinct().outerjoin(oc_drom_product.ProductCategory)
               .filter(and_(ProductDrom.main_car_sku != '', ProductDrom.main_car_sku != '0', ProductDrom.main_car_sku is not None))
-              .filter(ProductDrom.main_car.has()).filter(ProductDrom.quantity != 0)
+              .filter(ProductDrom.main_car.has()).filter(ProductDrom.quantity > 0)
               .filter(ProductDrom.categories.any(oc_drom_product.ProductCategory
                                                  .category_id.in_(config.drom_trucks_id)) if trucks else
                       oc_drom_product.ProductCategory.category_id.not_in(config.drom_trucks_id)).all())

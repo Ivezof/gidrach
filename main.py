@@ -128,7 +128,11 @@ def avito_default_elems(product: gidrachDB.Product, ad: xmlWriter.Elem):
 
     # cost
     cost = xmlWriter.Elem('Price', parent_elem=ad)
-    cost.set_content(product.price)
+    if config.avito_extra_percent > 0:
+
+        cost.set_content(product.price + (product.price * config.avito_extra_percent) / 100)
+    else:
+        cost.set_content(product.price)
 
 
 def avito_rim_default_elems(product: gidrachDB.Product, ad: xmlWriter.Elem):
