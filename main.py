@@ -168,10 +168,12 @@ def avito_xml_accessories(products: list[gidrachDB.Product], document: xmlWriter
 
         images = xmlWriter.Elem('ImageUrls', parent_elem=ad)
 
-        imgs = '|'.join(product_imgs[:4])
+        imgs = product_imgs[:4]
 
         main_car_imgs = product.main_car.all_images
-        imgs += '|'.join(main_car_imgs[:6])
+        imgs += main_car_imgs[:6]
+
+        images.set_content('|'.join(imgs))
 
         images.set_content(imgs)
 
@@ -228,12 +230,12 @@ def avito_xml_auto(products: list[gidrachDB.Product], document: xmlWriter.Docume
 
         images = xmlWriter.Elem('ImageUrls', parent_elem=ad)
 
-        imgs = '|'.join(product_imgs[:4])
+        imgs = product_imgs[:4]
 
         main_car_imgs = product.main_car.all_images
-        imgs += '|'.join(main_car_imgs[:6])
+        imgs += main_car_imgs[:6]
 
-        images.set_content(imgs)
+        images.set_content('|'.join(imgs))
 
         document.add_elem(ad)
 
