@@ -166,7 +166,7 @@ def avito_xml_accessories(products: list[gidrachDB.Product], document: xmlWriter
         # images
         product_imgs = product.all_images
 
-        images = xmlWriter.Elem('Images', parent_elem=ad)
+        images = xmlWriter.Elem('ImageUrls', parent_elem=ad)
 
         imgs = '|'.join(product_imgs[:4])
 
@@ -226,7 +226,7 @@ def avito_xml_auto(products: list[gidrachDB.Product], document: xmlWriter.Docume
         # images
         product_imgs = product.all_images
 
-        images = xmlWriter.Elem('Images', parent_elem=ad)
+        images = xmlWriter.Elem('ImageUrls', parent_elem=ad)
 
         imgs = '|'.join(product_imgs[:4])
 

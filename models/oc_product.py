@@ -8,6 +8,7 @@ Base = declarative_base()
 
 class ProductBase(Base):
     __tablename__ = 'oc_product'
+    domain = 'https://гидрач.рф/image/'
     product_id: Mapped[int] = mapped_column(Integer, primary_key=True, index=True)
     sku: Mapped[str] = mapped_column(VARCHAR, nullable=False, index=True)
     image: Mapped[str] = mapped_column(VARCHAR, index=True)
@@ -16,14 +17,14 @@ class ProductBase(Base):
 
     @hybrid_property
     def all_images(self):
-        images = [self.image]
+        images = [self.domain + self.image]
         if not self.product_images:
             return images
         if type(self.product_images) is list:
             for img in self.product_images:
-                images.append(img.image)
+                images.append(self.domain + img.image)
         else:
-            images.append(self.product_images.image)
+            images.append(self.domain + self.product_images.image)
         return images
 
 
