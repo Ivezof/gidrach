@@ -144,10 +144,12 @@ def avito_rim_default_elems(product: gidrachDB.Product, ad: xmlWriter.Elem):
 
     # images
     product_imgs = product.all_images
+    imgs = product_imgs[:10]
 
-    images = xmlWriter.Elem('ImageUrls', parent_elem=ad)
-    imgs = '|'.join(product_imgs[:10])
-    images.set_content(imgs)
+    images = xmlWriter.Elem('Images', parent_elem=ad)
+
+    for img in imgs:
+        xmlWriter.Elem('Image', attr={'url': img}, parent_elem=images)
 
 
 def avito_xml_accessories(products: list[gidrachDB.Product], document: xmlWriter.Document):
@@ -166,14 +168,15 @@ def avito_xml_accessories(products: list[gidrachDB.Product], document: xmlWriter
         # images
         product_imgs = product.all_images
 
-        images = xmlWriter.Elem('ImageUrls', parent_elem=ad)
-
         imgs = product_imgs[:4]
 
         main_car_imgs = product.main_car.all_images
         imgs += main_car_imgs[:6]
 
-        images.set_content('|'.join(imgs))
+        images = xmlWriter.Elem('Images', parent_elem=ad)
+
+        for img in imgs:
+            xmlWriter.Elem('Image', attr={'url': img}, parent_elem=images)
 
         # Video
         video = xmlWriter.Elem('VideoURL', parent_elem=ad)
@@ -230,14 +233,15 @@ def avito_xml_auto(products: list[gidrachDB.Product], document: xmlWriter.Docume
         # images
         product_imgs = product.all_images
 
-        images = xmlWriter.Elem('ImageUrls', parent_elem=ad)
-
         imgs = product_imgs[:4]
 
         main_car_imgs = product.main_car.all_images
         imgs += main_car_imgs[:6]
 
-        images.set_content('|'.join(imgs))
+        images = xmlWriter.Elem('Images', parent_elem=ad)
+
+        for img in imgs:
+            xmlWriter.Elem('Image', attr={'url': img}, parent_elem=images)
 
         # Video
         video = xmlWriter.Elem('VideoURL', parent_elem=ad)

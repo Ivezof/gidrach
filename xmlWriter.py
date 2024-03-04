@@ -18,7 +18,7 @@ class XmlElemFormatError(Exception):
 class Elem:
     def __init__(self, name: str, attr: dict = None, content: str = None, parent_elem=None):
         self.name = name
-        self.attr = attr
+        self.attr: dict = attr
         self.child_elements = []
         self.content = content
         if parent_elem:
