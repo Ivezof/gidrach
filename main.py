@@ -175,8 +175,6 @@ def avito_xml_accessories(products: list[gidrachDB.Product], document: xmlWriter
 
         images.set_content('|'.join(imgs))
 
-        images.set_content(imgs)
-
         # Video
         video = xmlWriter.Elem('VideoURL', parent_elem=ad)
         video.set_content(product.main_car.video_youtube)
