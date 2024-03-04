@@ -177,6 +177,10 @@ def avito_xml_accessories(products: list[gidrachDB.Product], document: xmlWriter
 
         images.set_content(imgs)
 
+        # Video
+        video = xmlWriter.Elem('VideoURL', parent_elem=ad)
+        video.set_content(product.main_car.video_youtube)
+
         document.add_elem(ad)
 
 
@@ -236,6 +240,10 @@ def avito_xml_auto(products: list[gidrachDB.Product], document: xmlWriter.Docume
         imgs += main_car_imgs[:6]
 
         images.set_content('|'.join(imgs))
+
+        # Video
+        video = xmlWriter.Elem('VideoURL', parent_elem=ad)
+        video.set_content(product.main_car.video_youtube)
 
         document.add_elem(ad)
 
