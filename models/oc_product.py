@@ -2,6 +2,7 @@ from sqlalchemy import Integer, Column, ForeignKey, VARCHAR, DECIMAL, Boolean, s
 from sqlalchemy.ext.declarative import declarative_base
 from sqlalchemy.ext.hybrid import hybrid_property
 from sqlalchemy.orm import relationship, mapped_column, attribute_mapped_collection, Mapped
+from sqlalchemy.orm.collections import InstrumentedList
 
 Base = declarative_base()
 
@@ -13,14 +14,14 @@ class ProductBase(Base):
     sku: Mapped[str] = mapped_column(VARCHAR, nullable=False, index=True)
     image: Mapped[str] = mapped_column(VARCHAR, index=True)
     video_youtube: Mapped[str] = mapped_column(VARCHAR, index=True)
-    product_images: Mapped[list] = relationship('ProductImage', back_populates='product', lazy='joined')
+    product_images = relationship('ProductImage', back_populates='product', uselist=True)
 
     @hybrid_property
     def all_images(self):
         images = [self.domain + self.image]
         if not self.product_images:
             return images
-        if type(self.product_images) is list:
+        if type(self.product_images) is InstrumentedList:
             for img in self.product_images:
                 images.append(self.domain + img.image)
         else:
@@ -109,7 +110,7 @@ class ProductAttribute(Base):
 
 class ProductImage(Base):
     __tablename__ = 'oc_product_image'
-    product_image_id = Column(Integer, primary_key=True)
+    product_image_id = Column(Integer, primary_key=True, index=True)
     product_id = Column(Integer, ForeignKey('oc_product.product_id'), nullable=False)
     image = Column(VARCHAR)
 

@@ -85,6 +85,7 @@ def get_products(separator=False):
               .filter(Product.main_category not in [1232, 1226])
               .filter(Product.price > config.avito_sep_summ if separator else Product.price <= config.avito_sep_summ)
               .filter(Product.price >= config.avito_min_summ if separator else Product.price <= config.avito_max_summ)
+              .limit(20000)
               .all())
 
     return result

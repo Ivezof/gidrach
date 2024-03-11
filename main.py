@@ -74,7 +74,7 @@ def update_product_on_site(products: dict):
 #     return valid_products
 
 
-def avito_default_elems(product: gidrachDB.Product, ad: xmlWriter.Elem):
+def avito_default_elems(product: gidrachDB.Product, ad: xmlWriter.Elem, custom_desc=False):
     # id товара
     id_ad = xmlWriter.Elem('Id', parent_elem=ad)
     id_ad.set_content(product.sku)
@@ -92,11 +92,14 @@ def avito_default_elems(product: gidrachDB.Product, ad: xmlWriter.Elem):
 
     # description
     description = xmlWriter.Elem('Description', parent_elem=ad)
-    description.set_content(info_msg_uns_1
-                            + "\n\n"
-                            + gidrachDB.unescape_text(product.description.description)
-                            + "\n\n"
-                            + info_msg_uns_2, cdata=True)
+    if not custom_desc:
+        description.set_content(info_msg_uns_1
+                                + "\n\n"
+                                + gidrachDB.unescape_text(product.description.description)
+                                + "\n\n"
+                                + info_msg_uns_2, cdata=True)
+    else:
+        description.set_content(config.avito_desc_sep_summ, cdata=True)
 
     # manager_name
     manager_name = xmlWriter.Elem('ManagerName', parent_elem=ad)
@@ -152,7 +155,7 @@ def avito_rim_default_elems(product: gidrachDB.Product, ad: xmlWriter.Elem):
         xmlWriter.Elem('Image', attr={'url': img}, parent_elem=images)
 
 
-def avito_xml_accessories(products: list[gidrachDB.Product], document: xmlWriter.Document):
+def avito_xml_accessories(products: list[gidrachDB.Product], document: xmlWriter.Document, custom_desc=False):
     for product in products:
         ad = xmlWriter.Elem('Ad')
         avito_default_elems(product, ad)
@@ -185,14 +188,14 @@ def avito_xml_accessories(products: list[gidrachDB.Product], document: xmlWriter
         document.add_elem(ad)
 
 
-def avito_xml_auto(products: list[gidrachDB.Product], document: xmlWriter.Document):
+def avito_xml_auto(products: list[gidrachDB.Product], document: xmlWriter.Document, custom_desc=False):
     timestart = time.time()
 
     for product in products:
         print(product.product_id)
         ad = xmlWriter.Elem('Ad')
 
-        avito_default_elems(product, ad)
+        avito_default_elems(product, ad, custom_desc)
 
         dism_product: oc_product.DismantlingProduct
         main_car = product.main_car
@@ -312,7 +315,6 @@ def avito_xml_disks(products: list[gidrachDB.Product], document: xmlWriter.Docum
         document.add_elem(ad)
 
 
-@profile
 def drom_xml(products: list[gidrachDB.Product], document: xmlWriter.Document):
     for product in products:
         offer = xmlWriter.Elem('offer')
@@ -366,9 +368,9 @@ def start_xml_generation():
     drom_prods = gidrachDB.get_products_to_drom()
     drom_prods_trucks = gidrachDB.get_products_to_drom(trucks=True)
 
-    avito_xml_accessories(accessories, avito_document)
+    avito_xml_accessories(accessories, avito_document, custom_desc=True)
     del accessories
-    avito_xml_auto(products, avito_document)
+    avito_xml_auto(products, avito_document, custom_desc=True)
     del products
 
     avito_xml_accessories(accessories_sep, avito_sep_document)
