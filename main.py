@@ -99,7 +99,7 @@ def avito_default_elems(product: gidrachDB.Product, ad: xmlWriter.Elem, custom_d
                                 + "\n\n"
                                 + info_msg_uns_2, cdata=True)
     else:
-        description.set_content(config.avito_desc_sep_summ, cdata=True)
+        description.set_content(config.avito_desc_sep_summ + "\n\n" + info_msg_uns_2, cdata=True)
 
     # manager_name
     manager_name = xmlWriter.Elem('ManagerName', parent_elem=ad)
