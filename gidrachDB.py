@@ -78,10 +78,19 @@ def get_accessories(separator=False):
     return result
 
 
+def get_audio(separator=False):
+    result = (default_query.filter(Product.attributes.any(attribute_id=26))
+              .filter(Product.price > config.avito_sep_summ if separator else Product.price <= config.avito_sep_summ)
+              .filter(Product.price >= config.avito_min_summ if separator else Product.price <= config.avito_max_summ)
+              .all())
+    return result
+
+
 def get_products(separator=False):
     result = (default_query.filter(Product.attributes.any(oc_product.ProductAttribute.text
                                                           .not_in(config.category_blacklists)))
               .filter(~Product.attributes.any(attribute_id=22))
+              .filter(~Product.attributes.any(attribute_id=26))
               .filter(Product.main_category not in [1232, 1226])
               .filter(Product.price > config.avito_sep_summ if separator else Product.price <= config.avito_sep_summ)
               .filter(Product.price >= config.avito_min_summ if separator else Product.price <= config.avito_max_summ)

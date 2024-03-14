@@ -79,9 +79,13 @@ def avito_default_elems(product: gidrachDB.Product, ad: xmlWriter.Elem, custom_d
     id_ad = xmlWriter.Elem('Id', parent_elem=ad)
     id_ad.set_content(product.sku)
 
-    # номер телефона
-    phone = xmlWriter.Elem('ContactPhone', parent_elem=ad)
-    phone.set_content('+79876543210')
+    if not custom_desc:
+        # номер телефона
+        phone = xmlWriter.Elem('ContactPhone', parent_elem=ad)
+        phone.set_content('+79876543210')
+    else:
+        cmethod = xmlWriter.Elem('ContactMethod', parent_elem=ad)
+        cmethod.set_content('В сообщениях')
 
     # avitoId
     xmlWriter.Elem("AvitoId", parent_elem=ad)
@@ -99,7 +103,8 @@ def avito_default_elems(product: gidrachDB.Product, ad: xmlWriter.Elem, custom_d
                                 + "\n\n"
                                 + info_msg_uns_2, cdata=True)
     else:
-        description.set_content(config.avito_desc_sep_summ + "\n\n" + info_msg_uns_2, cdata=True)
+        description.set_content(config.avito_desc_sep_summ + "\n\n" + gidrachDB.unescape_text(product.description.
+                                                                                              description), cdata=True)
 
     # manager_name
     manager_name = xmlWriter.Elem('ManagerName', parent_elem=ad)
@@ -155,10 +160,47 @@ def avito_rim_default_elems(product: gidrachDB.Product, ad: xmlWriter.Elem):
         xmlWriter.Elem('Image', attr={'url': img}, parent_elem=images)
 
 
+def avito_xml_audio(products: list[gidrachDB.Product], document: xmlWriter.Document, custom_desc=False):
+    for product in products:
+        ad = xmlWriter.Elem('Ad')
+        avito_default_elems(product, ad, custom_desc)
+
+        # ProductType
+        product_type = xmlWriter.Elem('ProductType', parent_elem=ad)
+        product_type.set_content('Для салона')
+
+        # GoodsType
+        goods_type = xmlWriter.Elem('GoodsType', parent_elem=ad)
+        goods_type.set_content('Аудио- и видеотехника')
+
+        # EquipmentType
+        equipment_type = xmlWriter.Elem('EquipmentType', parent_elem=ad)
+        equipment_type.set_content(config.equipment_type.get(product.attributes[26].text))
+
+        # images
+        product_imgs = product.all_images
+
+        imgs = product_imgs[:4]
+
+        main_car_imgs = product.main_car.all_images
+        imgs += main_car_imgs[:6]
+
+        images = xmlWriter.Elem('Images', parent_elem=ad)
+
+        for img in imgs:
+            xmlWriter.Elem('Image', attr={'url': img}, parent_elem=images)
+
+        # Video
+        video = xmlWriter.Elem('VideoURL', parent_elem=ad)
+        video.set_content(product.main_car.video_youtube)
+
+        document.add_elem(ad)
+
+
 def avito_xml_accessories(products: list[gidrachDB.Product], document: xmlWriter.Document, custom_desc=False):
     for product in products:
         ad = xmlWriter.Elem('Ad')
-        avito_default_elems(product, ad)
+        avito_default_elems(product, ad, custom_desc)
 
         # ProductType
         product_type = xmlWriter.Elem('ProductType', parent_elem=ad)
@@ -361,9 +403,11 @@ def drom_xml(products: list[gidrachDB.Product], document: xmlWriter.Document):
 def start_xml_generation():
     accessories = gidrachDB.get_accessories()
     products = gidrachDB.get_products()
+    audio = gidrachDB.get_audio()
 
     accessories_sep = gidrachDB.get_accessories(separator=True)
     products_sep = gidrachDB.get_products(separator=True)
+    audio_sep = gidrachDB.get_audio(separator=True)
 
     drom_prods = gidrachDB.get_products_to_drom()
     drom_prods_trucks = gidrachDB.get_products_to_drom(trucks=True)
@@ -372,11 +416,15 @@ def start_xml_generation():
     del accessories
     avito_xml_auto(products, avito_document, custom_desc=True)
     del products
+    avito_xml_audio(audio, avito_document, custom_desc=True)
+    del audio
 
     avito_xml_accessories(accessories_sep, avito_sep_document)
     del accessories_sep
     avito_xml_auto(products_sep, avito_sep_document)
     del products_sep
+    avito_xml_audio(audio_sep, avito_sep_document)
+    del audio_sep
 
     drom_xml(drom_prods, drom_document)
     drom_xml(drom_prods_trucks, drom_trucks_document)
