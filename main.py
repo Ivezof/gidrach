@@ -86,6 +86,8 @@ def avito_default_elems(product: gidrachDB.Product, ad: xmlWriter.Elem, custom_d
     else:
         cmethod = xmlWriter.Elem('ContactMethod', parent_elem=ad)
         cmethod.set_content('В сообщениях')
+        delivery = xmlWriter.Elem('Delivery', parent_elem=ad)
+        delivery.set_content('Выключена')
 
     # avitoId
     xmlWriter.Elem("AvitoId", parent_elem=ad)
@@ -433,6 +435,10 @@ def start_xml_generation():
     drom_trucks_document.close_document()
     avito_document.close_document()
     avito_sep_document.close_document()
+
+
+def start_order_update():
+    pass
 
 
 if __name__ == '__main__':

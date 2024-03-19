@@ -4,6 +4,51 @@ import requests
 from requests import JSONDecodeError
 
 import config
+from datetime import datetime
+import datetime as dt
+import pytz
+
+format_str = '%Y.%m.%d'
+day = dt.timedelta(days=1)
+timezone = pytz.timezone('Europe/Moscow')
+
+
+class Sales:
+    def __init__(self, d1=(datetime.now(timezone) - day).strftime(format_str),
+                 d2=datetime.now(timezone).strftime(format_str)):
+        self.d1 = d1
+        self.d2 = d2
+        self.headers = {'Authorization': 'Basic ' + base64.b64encode(
+            (config.tz_login + ':' + config.tz_password).encode()).decode()}
+        self.host = config.tz_host
+        self.sess = requests.session()
+        self.sess.headers = self.headers
+        self.prods = []
+
+    def get_sales(self):
+        method = '/method/reports/ReportSales'
+        data = {
+            'db': config.tz_db,
+            'params': [{
+                "YourReferenceOperationID": 1,
+                'jparams': {
+                    'GroupByDocNumber': 0,
+                    'byDocID': 0,
+                    'd1': self.d1,
+                    'd2': self.d2,
+                    'isByOnStock': 1,
+                    'isByOrder': 1,
+                    'isCarServiceOrder': 1,
+                    'IsServiceGoods': 0,
+                    'isReturnShow': 1,
+                    'isCarServiceOrderClosed': 0
+                }
+            }]
+        }
+        try:
+            self.prods = self.sess.post(self.host + method, json=data).json()[0]['result']
+        except JSONDecodeError as e:
+            self.prods = 'Error'
 
 
 class Products:
