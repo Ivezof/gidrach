@@ -85,7 +85,7 @@ class Order(Base):
 
 
 class OrderProduct(Base):
-    __tablename__ = 'oc_product_id'
+    __tablename__ = 'oc_order_product'
     order_product_id: Mapped[int] = mapped_column(Integer, primary_key=True, index=True, nullable=False)
     order_id: Mapped[int] = mapped_column(Integer, ForeignKey('oc_order.order_id'))
     order = relationship('Order', back_populates='order_product')
@@ -94,7 +94,7 @@ class OrderProduct(Base):
     model: Mapped[str] = mapped_column(VARCHAR)
     quantity: Mapped[int] = mapped_column(Integer)
     price: Mapped[int] = mapped_column(Integer)
-    total: Mapped[int] = mapped_column(Integer)
+    total: Mapped[int] = mapped_column(Integer, nullable=False)
     tax: Mapped[int] = mapped_column(Integer, default=0)
     reward: Mapped[int] = mapped_column(Integer, default=0)
 
@@ -113,6 +113,6 @@ custom_order.shipping_firstname = fsale.get('CounterpartsName')
 custom_order.firstname = fsale.get('CounterpartsName')
 custom_order.order_status_id = 5 if int(fsale.get('isCanceled')) == 0 else 8
 custom_order.store_name = fsale.get('FirmName')
-
+custom_order.date_added = fsale.get('doc_date')
 
 '''

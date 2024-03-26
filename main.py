@@ -1,9 +1,9 @@
 import re
 import time
 from xml.sax.saxutils import escape
-
+from datetime import datetime
 from line_profiler import profile
-
+from models.sales.oc_order import Order, OrderProduct
 import config
 import gidrachDB
 import tezariusDB
@@ -380,7 +380,7 @@ def drom_xml(products: list[gidrachDB.Product], document: xmlWriter.Document):
         oem_number.set_content(product.mpn)
 
         # description
-        normal_desc = product.description.description.replace("&lt;br /&gt;", "\n")
+        normal_desc = product.description.description.replace("&lt;br /&gt;", "\n").replace('&', '')
         normal_desc = p.sub("", normal_desc)
         description = xmlWriter.Elem('description', parent_elem=offer)
         description.set_content(msg_drom_1 + '\n\n' + normal_desc + '\n\n' + msg_drom_2)
@@ -438,7 +438,13 @@ def start_xml_generation():
 
 
 def start_order_update():
-    pass
+    sales = tezariusDB.Sales()
+    sales.get_sales()
+    orders = sales.prods
+    for order in orders:
+        gidrachDB.add_order(order, sales)
+
+    gidrachDB.session.commit()
 
 
 if __name__ == '__main__':

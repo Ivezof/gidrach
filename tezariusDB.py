@@ -25,6 +25,25 @@ class Sales:
         self.sess.headers = self.headers
         self.prods = []
 
+    def get_client(self, client_id):
+        method = '/method/any/SearchCounterparts'
+        data = {
+            'db': config.tz_db,
+            'params': [{
+                "YourReferenceOperationID": 1,
+                'jparams': {
+                    'CurrID': 0,
+                    'SearchFilter': 'ById',
+                    'SearchValue': str(client_id),
+                    'FirmID': config.firmid
+                }
+            }]
+        }
+        try:
+            return self.sess.post(self.host + method, json=data).json()[0]['result'][0]
+        except JSONDecodeError as e:
+            return None
+
     def get_sales(self):
         method = '/method/reports/ReportSales'
         data = {

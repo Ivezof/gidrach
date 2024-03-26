@@ -1,16 +1,19 @@
 import html
-import time
+import xml.etree.ElementTree as ET
+from datetime import datetime
 
 import requests
-from sqlalchemy import create_engine, and_, select, distinct
-from sqlalchemy.orm import Session, lazyload
-from models.oc_drom_product import Product as ProductDrom
-from models import oc_drom_product
-from models.oc_site_product import Product as LiteProduct
-from models.oc_product import Product, InformationDescription
+from sqlalchemy import create_engine, and_
+from sqlalchemy.orm import Session
+
 import config
+import tezariusDB
+from models import oc_drom_product
 from models import oc_product
-import xml.etree.ElementTree as ET
+from models.oc_drom_product import Product as ProductDrom
+from models.oc_product import Product, InformationDescription
+from models.oc_site_product import Product as LiteProduct
+from models.sales.oc_order import Order, OrderProduct
 
 engine = create_engine(
     f'mysql+pymysql://{config.site_login}:{config.site_password}@{config.site_db_ip}/{config.site_db}')
@@ -62,7 +65,8 @@ def get_all_products():
 
 def get_products_to_drom(trucks=False):
     result = (session.query(ProductDrom).distinct().outerjoin(oc_drom_product.ProductCategory)
-              .filter(and_(ProductDrom.main_car_sku != '', ProductDrom.main_car_sku != '0', ProductDrom.main_car_sku is not None))
+              .filter(
+        and_(ProductDrom.main_car_sku != '', ProductDrom.main_car_sku != '0', ProductDrom.main_car_sku is not None))
               .filter(ProductDrom.main_car.has()).filter(ProductDrom.quantity > 0)
               .filter(ProductDrom.categories.any(oc_drom_product.ProductCategory
                                                  .category_id.in_(config.drom_trucks_id)) if trucks else
@@ -131,6 +135,44 @@ def get_disks(separator=False):
     return result
 
 
-timestart = time.time()
-# products = get_battery()
-print(f'get all products at {time.time() - timestart}')
+def add_order(tz_product, sales: tezariusDB.Sales, product=None):
+    custom_order = Order()
+    custom_order_product = OrderProduct()
+    if not tz_product.get('art_code'):
+        return
+    if not product:
+        product = session.query(Product).where(Product.sku == tz_product.get('art_code')).first()
+
+    if not product:
+        return
+
+    if not tz_product.get(
+            'doc_date') or not product.description.name or not product.model or not product.product_id or tz_product.get(
+            'total') is None or not product.price or not tz_product.get('qty') or not tz_product.get(
+            'total') or not tz_product.get('CounterpartsName') or not tz_product.get('FirmName'):
+        return
+
+    custom_order_product.name = product.description.name
+    custom_order_product.model = product.model
+    custom_order_product.product_id = product.product_id
+    custom_order_product.total = tz_product.get('total')
+    custom_order_product.price = product.price
+    custom_order_product.quantity = tz_product.get('qty')
+    custom_order.order_product.append(custom_order_product)
+    custom_order.total = tz_product.get('total')
+    custom_order.payment_firstname = tz_product.get('CounterpartsName')[0:32]
+    custom_order.shipping_firstname = tz_product.get('CounterpartsName')[0:32]
+    custom_order.firstname = tz_product.get('CounterpartsName')[0:32]
+    custom_order.order_status_id = 5 if int(tz_product.get('isCanceled')) == 0 else 8
+    custom_order.store_name = tz_product.get('FirmName')
+
+    if tz_product.get('id_rbCounterparts'):
+        client = sales.get_client(tz_product.get('id_rbCounterparts'))
+        if client:
+            custom_order.telephone = sales.get_client(tz_product.get('id_rbCounterparts'))['phone_formated']
+
+    dt = datetime.strptime(tz_product.get('doc_date'), '%Y-%m-%d')
+
+    custom_order.date_added = dt
+    custom_order.date_modified = dt
+    session.add(custom_order)
