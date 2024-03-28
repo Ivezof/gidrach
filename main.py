@@ -464,3 +464,4 @@ def start_order_update():
 if __name__ == '__main__':
     update_product_on_site(gidrachDB.get_all_products())
     start_xml_generation()
+    start_order_update()
