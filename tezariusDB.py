@@ -16,6 +16,7 @@ timezone = pytz.timezone('Europe/Moscow')
 class Sales:
     def __init__(self, d1=(datetime.now(timezone) - day).strftime(format_str),
                  d2=datetime.now(timezone).strftime(format_str)):
+        self.orders = 'Error'
         self.d1 = d1
         self.d2 = d2
         self.headers = {'Authorization': 'Basic ' + base64.b64encode(
@@ -43,6 +44,34 @@ class Sales:
             return self.sess.post(self.host + method, json=data).json()[0]['result'][0]
         except JSONDecodeError as e:
             return None
+
+    def get_orders(self):
+        method = '/method/orders/GetOrderListDetails'
+        data = {
+            "db": "TZRS_2071_84593",
+            "params":
+                [
+                    {
+                        "YourReferenceOperationID": 1,
+                        "jparams":
+                            {
+                                "GroupByDocNumber": 0,
+                                "ByDate": 1,
+                                "HideIssued": 0,
+                                "date1": self.d1,
+                                "date2": self.d2,
+                                "ShowArh": 1,
+                                "MyOnly": 0,
+                                "TZ": 0,
+                                "ShowSales": 1
+                            }
+                    }
+                ]
+        }
+        try:
+            self.orders = self.sess.post(self.host + method, json=data).json()[0]['result']
+        except JSONDecodeError:
+            self.orders = 'Error'
 
     def get_sales(self):
         method = '/method/reports/ReportSales'

@@ -1,7 +1,9 @@
 import re
 import time
 from xml.sax.saxutils import escape
-from datetime import datetime
+import datetime
+
+import pytz
 from line_profiler import profile
 from models.sales.oc_order import Order, OrderProduct
 import config
@@ -438,11 +440,23 @@ def start_xml_generation():
 
 
 def start_order_update():
+    month = datetime.timedelta(days=30)
+    format_str = '%Y.%m.%d'
+    timezone = pytz.timezone('Europe/Moscow')
     sales = tezariusDB.Sales()
-    sales.get_sales()
-    orders = sales.prods
+    sales.get_orders()
+    orders = sales.orders
+    # выгрузка заказов за сутки
     for order in orders:
-        gidrachDB.add_order(order, sales)
+        gidrachDB.add_order(order)
+
+    # обновление статусов заказов за месяц
+    sales.d1 = (datetime.datetime.now(timezone) - month).strftime(format_str)
+    sales.d2 = datetime.datetime.now(timezone).strftime(format_str)
+    sales.get_orders()
+    orders_status = sales.orders
+    for order in orders_status:
+        gidrachDB.update_order(order)
 
     gidrachDB.session.commit()
 

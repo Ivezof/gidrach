@@ -135,7 +135,20 @@ def get_disks(separator=False):
     return result
 
 
-def add_order(tz_product, sales: tezariusDB.Sales, product=None):
+def update_order(tz_order):
+    order = session.query(Order).where(Order.tezarius_id == tz_order.get('id')).first()
+    if order and tz_order != 'Error':
+        try:
+            tz_status = int(tz_order.get('id_rbOrderStates'))
+        except ValueError:
+            return
+        config_site_status = config.tezarius_site_status.get(tz_status) if tz_status in config.tezarius_site_status else 1
+        if order.order_status_id != config_site_status:
+            order.order_status_id = config_site_status
+            session.add(order)
+
+
+def add_order(tz_product, product=None):
     custom_order = Order()
     custom_order_product = OrderProduct()
     if not tz_product.get('art_code'):
@@ -148,28 +161,26 @@ def add_order(tz_product, sales: tezariusDB.Sales, product=None):
 
     if not tz_product.get(
             'doc_date') or not product.description.name or not product.model or not product.product_id or tz_product.get(
-            'total') is None or not product.price or not tz_product.get('qty') or not tz_product.get(
-            'total') or not tz_product.get('CounterpartsName') or not tz_product.get('FirmName'):
+        'total') is None or not product.price or not tz_product.get('qty') or not tz_product.get(
+        'total') or not tz_product.get('rbCounterparts_view') or not tz_product.get('StockShop'):
         return
 
-    custom_order_product.name = product.description.name
-    custom_order_product.model = product.model
+    custom_order_product.name = tz_product.get('name')
+    custom_order_product.model = tz_product.get('art_brand')
     custom_order_product.product_id = product.product_id
     custom_order_product.total = tz_product.get('total')
     custom_order_product.price = product.price
     custom_order_product.quantity = tz_product.get('qty')
     custom_order.order_product.append(custom_order_product)
     custom_order.total = tz_product.get('total')
-    custom_order.payment_firstname = tz_product.get('CounterpartsName')[0:32]
-    custom_order.shipping_firstname = tz_product.get('CounterpartsName')[0:32]
-    custom_order.firstname = tz_product.get('CounterpartsName')[0:32]
-    custom_order.order_status_id = 5 if int(tz_product.get('isCanceled')) == 0 else 8
-    custom_order.store_name = tz_product.get('FirmName')
-
-    if tz_product.get('id_rbCounterparts'):
-        client = sales.get_client(tz_product.get('id_rbCounterparts'))
-        if client:
-            custom_order.telephone = sales.get_client(tz_product.get('id_rbCounterparts'))['phone_formated']
+    custom_order.payment_firstname = tz_product.get('rbCounterparts_view')[0:32]
+    custom_order.shipping_firstname = tz_product.get('rbCounterparts_view')[0:32]
+    custom_order.firstname = tz_product.get('rbCounterparts_view')[0:32]
+    custom_order.order_status_id = config.tezarius_site_status.get(int(tz_product.get('id_rbOrderStates'))) if int(tz_product.get('id_rbOrderStates')) in config.tezarius_site_status else 1
+    custom_order.store_name = tz_product.get('StockShop')
+    custom_order.tezarius_id = int(tz_product.get('id'))
+    if 'phone_formated' in tz_product and tz_product.get('phone_formated'):
+        custom_order.telephone = tz_product.get('phone_formated')
 
     dt = datetime.strptime(tz_product.get('doc_date'), '%Y-%m-%d')
 

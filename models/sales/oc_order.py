@@ -81,6 +81,7 @@ class Order(Base):
     comment_manager: Mapped[str] = mapped_column(VARCHAR, nullable=False, default='')
     manager_process_orders: Mapped[str] = mapped_column(VARCHAR, nullable=False, default='')
     text_ttn: Mapped[str] = mapped_column(VARCHAR, nullable=False, default='')
+    tezarius_id: Mapped[int] = mapped_column(Integer, nullable=True, default=None)
     order_product = relationship('OrderProduct', back_populates='order')
 
 
@@ -97,6 +98,13 @@ class OrderProduct(Base):
     total: Mapped[int] = mapped_column(Integer, nullable=False)
     tax: Mapped[int] = mapped_column(Integer, default=0)
     reward: Mapped[int] = mapped_column(Integer, default=0)
+
+
+class OrderStatus(Base):
+    __tablename__ = 'oc_order_status'
+    order_status_id: Mapped[int] = mapped_column(Integer, primary_key=True, index=True)
+    name: Mapped[str] = mapped_column(VARCHAR)
+
 
 
 '''
