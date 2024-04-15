@@ -16,7 +16,8 @@ from models.oc_site_product import Product as LiteProduct
 from models.sales.oc_order import Order, OrderProduct
 
 engine = create_engine(
-    f'mysql+pymysql://{config.site_login}:{config.site_password}@{config.site_db_ip}/{config.site_db}')
+    f'mysql+pymysql://{config.site_login}:{config.site_password}@{config.site_db_ip}/{config.site_db}',
+    pool_pre_ping=True)
 
 engine.execution_options(stream_results=True)
 
@@ -135,17 +136,31 @@ def get_disks(separator=False):
     return result
 
 
+def update_tz_code_order(order_id, tz_id):
+    order = session.query(Order).where(Order.order_id == order_id).first()
+    if order:
+        order.tezarius_id = tz_id
+        session.add(order)
+        session.commit()
+
+
 def update_order(tz_order):
-    order = session.query(Order).where(Order.tezarius_id == tz_order.get('id')).first()
+    order = session.query(Order).filter(Order.tezarius_id.like('%' + str(tz_order.get('id')) + '%')).first()
     if order and tz_order != 'Error':
         try:
             tz_status = int(tz_order.get('id_rbOrderStates'))
         except ValueError:
             return
-        config_site_status = config.tezarius_site_status.get(tz_status) if tz_status in config.tezarius_site_status else 1
+        config_site_status = config.tezarius_site_status.get(
+            tz_status) if tz_status in config.tezarius_site_status else 1
         if order.order_status_id != config_site_status:
             order.order_status_id = config_site_status
             session.add(order)
+
+
+def get_order(order_id):
+    order = session.query(Order).where(Order.order_id == order_id).first()
+    return order
 
 
 def add_order(tz_product, product=None):
@@ -165,25 +180,31 @@ def add_order(tz_product, product=None):
         'total') or not tz_product.get('rbCounterparts_view') or not tz_product.get('StockShop'):
         return
 
+    order_ext = session.query(Order).filter(Order.tezarius_id.like('%' + str(tz_product.get('id')) + '%')).first()
     custom_order_product.name = tz_product.get('name')
     custom_order_product.model = tz_product.get('art_brand')
     custom_order_product.product_id = product.product_id
     custom_order_product.total = tz_product.get('total')
     custom_order_product.price = product.price
     custom_order_product.quantity = tz_product.get('qty')
-    custom_order.order_product.append(custom_order_product)
-    custom_order.total = tz_product.get('total')
-    custom_order.payment_firstname = tz_product.get('rbCounterparts_view')[0:32]
-    custom_order.shipping_firstname = tz_product.get('rbCounterparts_view')[0:32]
-    custom_order.firstname = tz_product.get('rbCounterparts_view')[0:32]
-    custom_order.order_status_id = config.tezarius_site_status.get(int(tz_product.get('id_rbOrderStates'))) if int(tz_product.get('id_rbOrderStates')) in config.tezarius_site_status else 1
-    custom_order.store_name = tz_product.get('StockShop')
-    custom_order.tezarius_id = int(tz_product.get('id'))
-    if 'phone_formated' in tz_product and tz_product.get('phone_formated'):
-        custom_order.telephone = tz_product.get('phone_formated')
+    if not order_ext:
+        custom_order.order_product.append(custom_order_product)
+        custom_order.total = tz_product.get('total')
+        custom_order.payment_firstname = tz_product.get('rbCounterparts_view')[0:32]
+        custom_order.shipping_firstname = tz_product.get('rbCounterparts_view')[0:32]
+        custom_order.firstname = tz_product.get('rbCounterparts_view')[0:32]
+        custom_order.order_status_id = config.tezarius_site_status.get(int(tz_product.get('id_rbOrderStates'))) if int(
+            tz_product.get('id_rbOrderStates')) in config.tezarius_site_status else 1
+        custom_order.store_name = tz_product.get('StockShop')
+        custom_order.tezarius_id = str(tz_product.get('id'))
+        if 'phone_formated' in tz_product and tz_product.get('phone_formated'):
+            custom_order.telephone = tz_product.get('phone_formated')
+        dt = datetime.strptime(tz_product.get('doc_date'), '%Y-%m-%d')
 
-    dt = datetime.strptime(tz_product.get('doc_date'), '%Y-%m-%d')
-
-    custom_order.date_added = dt
-    custom_order.date_modified = dt
-    session.add(custom_order)
+        custom_order.date_added = dt
+        custom_order.date_modified = dt
+        session.add(custom_order)
+    else:
+        order_ext.order_product.append(custom_order_product)
+        order_ext.tezarius_id += ',' + str(tz_product.get('id'))
+        session.add(order_ext)

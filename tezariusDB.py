@@ -26,6 +26,29 @@ class Sales:
         self.sess.headers = self.headers
         self.prods = []
 
+    def get_order(self, order_id):
+        method = '/method/orders/GetOrderListDetails'
+        data = {
+            "db": config.tz_db,
+            "params":
+                [
+                    {
+                        "YourReferenceOperationID": 1,
+                        "jparams":
+                            {
+                                "GroupByDocNumber": 0,
+                                "ByOrderNumber": order_id,
+                                "ShowArh": "1",
+                                "MyOnly": "0"
+                            }
+                    }
+                ]
+        }
+        try:
+            return self.sess.post(self.host + method, json=data).json()[0]['result']
+        except JSONDecodeError:
+            return None
+
     def get_client(self, client_id):
         method = '/method/any/SearchCounterparts'
         data = {
@@ -43,6 +66,51 @@ class Sales:
         try:
             return self.sess.post(self.host + method, json=data).json()[0]['result'][0]
         except JSONDecodeError as e:
+            return None
+
+    def get_product(self, sku):
+        method = '/method/referencebook/rbGoods/get'
+        data = {
+            'db': config.tz_db,
+            'params': [{
+                "YourReferenceOperationID": 1,
+                'jparams': {
+                    "RemaindersByStockID": 2,
+                    "isRemainsOnly": 0,
+                    "filter": "GoodsMultiSearch",
+                    "multivalue": sku,
+                    "limit": 100,
+                    "limitPos": 1
+                }
+            }]
+        }
+        try:
+            result = self.sess.post(self.host + method, json=data).json()[0]['result']
+            for prod in result:
+                if str(prod['code']) == str(sku):
+                    return prod
+        except JSONDecodeError:
+            return None
+
+    def get_client_by_phone(self, phone):
+        method = '/method/any/SearchCounterparts'
+        data = {
+            'db': config.tz_db,
+            'params': [{
+                "YourReferenceOperationID": 1,
+                'jparams': {
+                    'CurrID': 0,
+                    'SearchFilter': 'MultiSearch',
+                    'SearchValue': phone,
+                    'FirmID': config.firmid
+                }
+            }]
+        }
+        try:
+            return self.sess.post(self.host + method, json=data).json()[0]['result'][0]
+        except JSONDecodeError as e:
+            return None
+        except Exception:
             return None
 
     def get_orders(self):
@@ -72,6 +140,105 @@ class Sales:
             self.orders = self.sess.post(self.host + method, json=data).json()[0]['result']
         except JSONDecodeError:
             self.orders = 'Error'
+
+    def get_location_id(self, name):
+        method = '/method/referencebook/rbStockStoragePlace/get'
+        data = {
+            'db': config.tz_db,
+            'params': [
+                {
+                    'YourReferenceOperationID': 1,
+                    'jparams': {
+                        'filter': 'rbStock',
+                        'id_rbStock': 2
+                    }
+                }
+            ]
+        }
+
+        try:
+            res = self.sess.post(self.host + method, json=data).json()[0]['result']
+            for i in res:
+                if i['name'] == name:
+                    return i['id']
+        except JSONDecodeError:
+            return None
+
+    def add_cart(self, counterpart_id, product_id, qty, loc_name):
+        method = '/method/cart/add'
+        data = {
+            'db': config.tz_db,
+            'params': [
+                {
+                    'YourReferenceOperationID': 1,
+                    'jparams': {
+                        "isWebCart": 0,
+                        "ShopID": 2,
+                        "tabID": 1,
+                        "CounterPartsID": counterpart_id,
+                        "id_rbGoods": product_id,
+                        "GoodsTempID": 0,
+                        "qty": qty,
+                        "FirmID": 2,
+                        "StockID": 2,
+                        "PlaceID": self.get_location_id(loc_name) if self.get_location_id(loc_name) else 0,
+                        "note": '',
+                        "isHideArticleCode": 0,
+                        "LanguageCode": 'ru'
+                    }
+                }
+            ]
+        }
+
+        try:
+            self.sess.post(self.host + method, json=data).json()[0]['result']
+        except JSONDecodeError:
+            return None
+
+    def create_order(self, order_id, date, customer_name, customer_phone, customer_email, customer_source, note,
+                     positions):
+        method = '/method/cart/OrderFastAny'
+        positions_tz = []
+        for pos in positions:
+            positions_tz.append({'isInnerGoods': 1, 'name': pos['name'], 'code': int(pos['code']),
+                                 'brand': pos['brand'],
+                                 'cost': pos['cost'], 'cost_in': pos['cost'],
+                                 'qty': pos['qty'], 'note': pos['note'], 'warehouse': 'Автозапчасти Гидрач',
+                                 'dlvrMin': pos['date'], 'dlvrMax': pos['date']})
+        data = {
+            'db': config.tz_db,
+            'params': [
+                {
+                    'YourReferenceOperationID': 1,
+                    'jparams': {
+                        'FirmID': 2,
+                        'ShopID': 2,
+                        'isWebCard': 1,
+                        'OrderID': order_id,
+                        'OrderDataSet': date,
+                        'CounterPartsID': self.get_client_by_phone(customer_phone)['id'] if self.get_client_by_phone(
+                            customer_phone) else 0,
+                        'CustomerName': customer_name,
+                        'CustomerPhone': customer_phone,
+                        'CustomerEmail': customer_email,
+                        'CustomerSource': customer_source,
+                        'note': note,
+                        'isToWork': 0,
+                        'isDelivery': 0,
+                        'address_delivery': '',
+                        'isDeliveryPartly': 0,
+                        'LanguageCode': 'ru',
+                        'positions': positions_tz
+                    }
+                }
+            ]
+        }
+
+        try:
+            return self.sess.post(self.host + method, json=data).json()[0]['result']
+        except JSONDecodeError:
+            print('error')
+            return 'Error'
 
     def get_sales(self):
         method = '/method/reports/ReportSales'

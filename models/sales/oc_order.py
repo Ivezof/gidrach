@@ -9,6 +9,7 @@ import datetime
 from sqlalchemy import VARCHAR, Integer, ForeignKey, Boolean, Text, DATETIME
 from sqlalchemy.ext.hybrid import hybrid_property
 from sqlalchemy.orm import declarative_base, mapped_column, Mapped, relationship
+from ..oc_product import Product
 
 Base = declarative_base()
 
@@ -81,16 +82,17 @@ class Order(Base):
     comment_manager: Mapped[str] = mapped_column(VARCHAR, nullable=False, default='')
     manager_process_orders: Mapped[str] = mapped_column(VARCHAR, nullable=False, default='')
     text_ttn: Mapped[str] = mapped_column(VARCHAR, nullable=False, default='')
-    tezarius_id: Mapped[int] = mapped_column(Integer, nullable=True, default=None)
-    order_product = relationship('OrderProduct', back_populates='order')
+    tezarius_id: Mapped[str] = mapped_column(VARCHAR, nullable=True, default=None)
+    order_product = relationship('OrderProduct', back_populates='order', uselist=True)
 
 
 class OrderProduct(Base):
     __tablename__ = 'oc_order_product'
     order_product_id: Mapped[int] = mapped_column(Integer, primary_key=True, index=True, nullable=False)
     order_id: Mapped[int] = mapped_column(Integer, ForeignKey('oc_order.order_id'))
-    order = relationship('Order', back_populates='order_product')
-    product_id: Mapped[int] = mapped_column(Integer)
+    order = relationship('Order', back_populates='order_product', uselist=False)
+    product_id: Mapped[int] = mapped_column(Integer, ForeignKey(Product.product_id))
+    product: Mapped[Product] = relationship(Product, uselist=False)
     name: Mapped[str] = mapped_column(VARCHAR)
     model: Mapped[str] = mapped_column(VARCHAR)
     quantity: Mapped[int] = mapped_column(Integer)
